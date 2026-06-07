@@ -34,10 +34,12 @@ Os scripts ficam em `db/`. Execute na ordem (via `sqlcmd`, Azure Data Studio ou 
 
 ```bash
 sqlcmd -S localhost -i db/schema.sql   # cria o banco StarCorpTravel e as tabelas
-sqlcmd -S localhost -i db/seed.sql      # popula companhias, clientes e voos de exemplo
+sqlcmd -S localhost -i db/seed.sql      # popula dados de exemplo
 ```
 
 > O `schema.sql` recria as tabelas (drop/create). Use apenas em ambiente de desenvolvimento.
+
+O `seed.sql` insere 4 companhias, 6 clientes (um inativo), 11 voos (um inativo e um quase lotado, para exercitar busca/paginação e regras de disponibilidade) e 3 reservas de exemplo cobrindo os estados confirmada (com pagamento), pendente e cancelada.
 
 Ajuste a connection string em `src/StarCorp.Travel.Api/appsettings.json`:
 
