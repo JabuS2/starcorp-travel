@@ -18,7 +18,7 @@ tests/
 ```
 
 - **Domain**: `Customer`, `Airline`, `Flight`, `Passenger`, `Payment`, `Booking` (aggregate root) e os serviços de domínio `PricingService` e `CancellationService`. Validações centralizadas no `Guard`.
-- **Application**: um *handler* por caso de uso (`SearchFlights`, `CreateBooking`, `GetBooking`, `ProcessPayment`, `CancelBooking`), com requests/responses dedicados e exceções de aplicação (`NotFoundException`, `ConflictException`, `BusinessRuleException`).
+- **Application**: um *handler* por caso de uso (`SearchFlights`, `CreateBooking`, `GetBooking`, `ProcessPayment`, `CancelBooking`), com requests/responses dedicados e exceções de aplicação (`NotFoundException`, `ConflictException`).
 - **Infrastructure**: repositórios com Dapper e SQL parametrizado, paginação via `OFFSET/FETCH`.
 - **Api**: REST + Swagger, middleware global de tratamento de erros mapeando exceções para códigos HTTP.
 
@@ -73,7 +73,7 @@ Atualmente **109 testes** (89 de domínio + 20 de aplicação), todos verdes.
 | POST | `/api/bookings/{id}/payment` | Aplica o ajuste do método (CreditCard/Pix/Boleto), processa o pagamento e confirma a reserva |
 | POST | `/api/bookings/{id}/cancel` | Cancela a reserva e calcula o reembolso |
 
-Códigos HTTP: `400` (entrada inválida), `404` (não encontrado), `409` (conflito de estado, ex.: sem assentos / já paga / já cancelada), `422` (violação de regra de negócio).
+Códigos HTTP: `400` (requisição malformada — validação de modelo do ASP.NET, ex.: tipo inválido ou corpo ausente), `404` (não encontrado), `409` (conflito de estado, ex.: cliente/voo inativo, sem assentos, já paga, já cancelada), `422` (validação de negócio, ex.: CPF inválido, campos obrigatórios, faixa de preço inconsistente).
 
 ## Regras de negócio
 

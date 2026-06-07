@@ -32,9 +32,8 @@ public sealed class ExceptionHandlingMiddleware
         {
             NotFoundException => (StatusCodes.Status404NotFound, "Recurso não encontrado"),
             ConflictException => (StatusCodes.Status409Conflict, "Conflito de estado"),
-            BusinessRuleException => (StatusCodes.Status422UnprocessableEntity, "Regra de negócio violada"),
+            ArgumentException => (StatusCodes.Status422UnprocessableEntity, "Validação de negócio"),
             InvalidOperationException => (StatusCodes.Status422UnprocessableEntity, "Operação inválida"),
-            ArgumentException => (StatusCodes.Status400BadRequest, "Requisição inválida"),
             _ => (StatusCodes.Status500InternalServerError, "Erro interno do servidor")
         };
 
