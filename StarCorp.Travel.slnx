@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/StarCorp.Travel.Api/StarCorp.Travel.Api.csproj" />
+    <Project Path="src/StarCorp.Travel.Application/StarCorp.Travel.Application.csproj" />
+    <Project Path="src/StarCorp.Travel.Domain/StarCorp.Travel.Domain.csproj" />
+    <Project Path="src/StarCorp.Travel.Infrastructure/StarCorp.Travel.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/StarCorp.Travel.Application.Tests/StarCorp.Travel.Application.Tests.csproj" />
+    <Project Path="tests/StarCorp.Travel.Domain.Tests/StarCorp.Travel.Domain.Tests.csproj" />
+  </Folder>
+</Solution>
