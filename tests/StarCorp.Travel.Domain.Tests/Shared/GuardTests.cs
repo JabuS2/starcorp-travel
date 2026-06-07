@@ -168,4 +168,73 @@ public class GuardTests
         Assert.Contains($"{fieldName} é inválido", exception.Message);
     }
 
+    [Fact]
+    public void DeveLancarExcecaoQuandoPrecosMenorOuIgualAZero()
+    {
+        // Arrange
+        var value = 0m;
+        var fieldName = "Preço";
+
+        // Act & Assert
+        var exception = Assert.Throws<ArgumentException>(() => Guard.ValidatePositiveDecimal(value, fieldName));
+        Assert.Contains($"{fieldName} deve ser maior que zero", exception.Message);
+    }
+
+    [Fact]
+    public void DeveLancarExcecaoQuandoAssentosMenorQueZero()
+    {
+        // Arrange
+        var value = -1;
+        var fieldName = "Assentos";
+
+        // Act & Assert
+        var exception = Assert.Throws<ArgumentException>(() => Guard.ValidatePositiveInteger(value, fieldName));
+        Assert.Contains($"{fieldName} deve ser um valor positivo", exception.Message);
+    }
+
+    [Fact]
+    public void DeveLancarExcecaoQuandoDataChegadaAnteriorDataPartida()
+    {
+        // Arrange
+        var departure = DateTime.Now;
+        var arrival = departure.AddHours(-1);
+        var fieldName = "Data de Chegada";
+
+        // Act & Assert
+        var exception = Assert.Throws<ArgumentException>(() => Guard.ValidateArrivalAfterDeparture(arrival, departure, fieldName));
+        Assert.Contains($"{fieldName} deve ser posterior à data de partida", exception.Message);
+    }
+
+    [Fact]
+    public void DeveAceitarPrecosMaioresQueZero()
+    {
+        // Arrange
+        var value = 100m;
+        var fieldName = "Preço";
+
+        // Act & Assert
+        Guard.ValidatePositiveDecimal(value, fieldName);
+    }
+    [Fact]
+    public void DeveAceitarAssentosMaioresOuIgualAZero()
+    {
+        // Arrange
+        var value = 0;
+        var fieldName = "Assentos";
+
+        // Act & Assert
+        Guard.ValidatePositiveInteger(value, fieldName);
+    }
+    [Fact]
+    public void DeveAceitarDataChegadaPosteriorDataPartida()
+    {
+        // Arrange
+        var departure = DateTime.Now;
+        var arrival = departure.AddHours(1);
+        var fieldName = "Data de Chegada";
+
+        // Act & Assert
+        Guard.ValidateArrivalAfterDeparture(arrival, departure, fieldName);
+    }
+
 }

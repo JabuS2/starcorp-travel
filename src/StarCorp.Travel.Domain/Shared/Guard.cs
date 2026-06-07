@@ -92,4 +92,22 @@ public static class Guard
         if (secondDigit != int.Parse(cnpj[13].ToString()))
             throw new ArgumentException($"{fieldName} é inválido", fieldName);
     }
+
+    public static void ValidatePositiveDecimal(decimal value, string fieldName)
+    {
+        if (value <= 0)
+            throw new ArgumentException($"{fieldName} deve ser maior que zero", fieldName);
+    }
+
+    public static void ValidatePositiveInteger(int value, string fieldName)
+    {
+        if (value < 0)
+            throw new ArgumentException($"{fieldName} deve ser um valor positivo", fieldName);
+    }
+
+    public static void ValidateArrivalAfterDeparture(DateTime arrival, DateTime departure, string fieldName)
+    {
+        if (arrival <= departure)
+            throw new ArgumentException($"{fieldName} deve ser posterior à data de partida", fieldName);
+    }
 }
