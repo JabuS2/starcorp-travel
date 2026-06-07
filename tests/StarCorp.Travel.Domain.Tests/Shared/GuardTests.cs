@@ -237,4 +237,26 @@ public class GuardTests
         Guard.ValidateArrivalAfterDeparture(arrival, departure, fieldName);
     }
 
+    [Fact]
+    public void DeveLancarExcecaoQuandoGuidForVazio()
+    {
+        // Arrange
+        var value = Guid.Empty;
+        var fieldName = "ID";
+
+        // Act & Assert
+        var exception = Assert.Throws<ArgumentException>(() => Guard.ValidateGuid(value, fieldName));
+        Assert.Contains($"{fieldName} é obrigatório", exception.Message);
+    }
+
+    [Fact]
+    public void DeveAceitarGuidValido()
+    {
+        // Arrange
+        var value = Guid.NewGuid();
+        var fieldName = "ID";
+
+        // Act & Assert
+        Guard.ValidateGuid(value, fieldName);
+    }
 }

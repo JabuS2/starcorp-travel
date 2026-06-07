@@ -110,4 +110,10 @@ public static class Guard
         if (arrival <= departure)
             throw new ArgumentException($"{fieldName} deve ser posterior à data de partida", fieldName);
     }
+
+    public static void ValidateGuid(Guid value, string fieldName)
+    {
+        if (value == Guid.Empty)
+            throw new ArgumentException($"{fieldName} é obrigatório", fieldName);
+    }
 }
