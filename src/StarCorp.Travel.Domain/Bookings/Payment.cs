@@ -28,4 +28,13 @@ public class Payment : Entity
         Status = PaymentStatus.Confirmed;
         PaidAt = confirmDate;
     }
+
+    public static Payment Restore(Guid id, Guid bookingId, Guid customerId, decimal amount, PaymentMethod paymentMethod, PaymentStatus status, DateTime? paidAt, DateTime createdAt, DateTime updatedAt)
+    {
+        var payment = new Payment(bookingId, customerId, amount, paymentMethod);
+        payment.SetPersistenceData(id, createdAt, updatedAt);
+        payment.Status = status;
+        payment.PaidAt = paidAt;
+        return payment;
+    }
 }

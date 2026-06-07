@@ -117,4 +117,20 @@ public class BookingTests
 
         Assert.Throws<InvalidOperationException>(() => booking.Cancel());
     }
+
+    [Fact]
+    public void DeveReconstruirReservaPreservandoIdEStatus()
+    {
+        var id = Guid.NewGuid();
+        var createdAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        var updatedAt = new DateTime(2026, 1, 2, 0, 0, 0, DateTimeKind.Utc);
+
+        var booking = Booking.Restore(id, _customerId, _flightId, BookingClass.Business, BookingStatus.Confirmed, _totalAmount, ValidPassengers(), createdAt, updatedAt);
+
+        Assert.Equal(id, booking.Id);
+        Assert.Equal(BookingStatus.Confirmed, booking.Status);
+        Assert.Equal(BookingClass.Business, booking.BookingClass);
+        Assert.Equal(createdAt, booking.CreatedAt);
+        Assert.Equal(updatedAt, booking.UpdatedAt);
+    }
 }

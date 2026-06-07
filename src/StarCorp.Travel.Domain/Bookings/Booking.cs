@@ -45,4 +45,12 @@ public class Booking : Entity
 
         Status = BookingStatus.Cancelled;
     }
+
+    public static Booking Restore(Guid id, Guid customerId, Guid flightId, BookingClass bookingClass, BookingStatus status, decimal totalAmount, IEnumerable<Passenger> passengers, DateTime createdAt, DateTime updatedAt)
+    {
+        var booking = new Booking(customerId, flightId, bookingClass, totalAmount, passengers);
+        booking.SetPersistenceData(id, createdAt, updatedAt);
+        booking.Status = status;
+        return booking;
+    }
 }

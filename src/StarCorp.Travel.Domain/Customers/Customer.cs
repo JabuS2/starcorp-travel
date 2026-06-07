@@ -25,4 +25,12 @@ public class Customer : Entity
         DocumentNumber = documentNumber;
         IsActive = true;
     }
+
+    public static Customer Restore(Guid id, string name, string email, string phoneNumber, string address, string documentNumber, bool isActive, DateTime createdAt, DateTime updatedAt)
+    {
+        var customer = new Customer(name, email, phoneNumber, address, documentNumber);
+        customer.SetPersistenceData(id, createdAt, updatedAt);
+        customer.IsActive = isActive;
+        return customer;
+    }
 }

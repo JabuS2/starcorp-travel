@@ -32,4 +32,12 @@ public class Flight : Entity
         AirlineId = airlineId;
         IsActive = true;
     }
+
+    public static Flight Restore(Guid id, string origin, string destination, DateTime departureTime, DateTime arrivalTime, decimal basePrice, int economySeats, int businessSeats, Guid airlineId, bool isActive, DateTime createdAt, DateTime updatedAt)
+    {
+        var flight = new Flight(origin, destination, departureTime, arrivalTime, basePrice, economySeats, businessSeats, airlineId);
+        flight.SetPersistenceData(id, createdAt, updatedAt);
+        flight.IsActive = isActive;
+        return flight;
+    }
 }

@@ -15,4 +15,11 @@ public class Passenger : Entity
         Name = name;
         Document = document;
     }
+
+    public static Passenger Restore(Guid id, string name, string document, DateTime createdAt, DateTime updatedAt)
+    {
+        var passenger = new Passenger(name, document);
+        passenger.SetPersistenceData(id, createdAt, updatedAt);
+        return passenger;
+    }
 }

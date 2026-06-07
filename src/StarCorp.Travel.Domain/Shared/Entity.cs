@@ -13,4 +13,10 @@ public abstract class Entity
         UpdatedAt = DateTime.UtcNow;
     }
 
+    protected void SetPersistenceData(Guid id, DateTime createdAt, DateTime updatedAt)
+    {
+        Id = id;
+        CreatedAt = createdAt;
+        UpdatedAt = updatedAt;
+    }
 }
