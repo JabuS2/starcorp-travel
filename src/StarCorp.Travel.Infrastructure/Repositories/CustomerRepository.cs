@@ -23,14 +23,6 @@ FROM Customers WHERE Id = @Id;";
         return row?.ToDomain();
     }
 
-    public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
-    {
-        const string sql = "SELECT CASE WHEN EXISTS (SELECT 1 FROM Customers WHERE Id = @Id AND IsActive = 1) THEN 1 ELSE 0 END;";
-
-        await using var connection = _connectionFactory.Create();
-        return await connection.ExecuteScalarAsync<bool>(new CommandDefinition(sql, new { Id = id }, cancellationToken: cancellationToken));
-    }
-
     private sealed class CustomerRow
     {
         public Guid Id { get; init; }

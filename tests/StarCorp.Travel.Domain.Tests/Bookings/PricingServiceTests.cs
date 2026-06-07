@@ -8,60 +8,75 @@ public class PricingServiceTests
     private readonly decimal _basePrice = 1000m;
 
     [Fact]
-    public void DeveCalcularPrecoEconomyComCartaoDeCredito()
+    public void DeveCalcularPrecoBaseEconomy()
     {
-        var breakdown = PricingService.Calculate(_basePrice, 2, BookingClass.Economy, PaymentMethod.CreditCard);
+        var breakdown = PricingService.CalculateBase(_basePrice, 2, BookingClass.Economy);
 
         Assert.Equal(2000m, breakdown.Subtotal);
         Assert.Equal(250m, breakdown.Taxes);
         Assert.Equal(112.50m, breakdown.ServiceFee);
-        Assert.Equal(70.88m, breakdown.PaymentAdjustment);
-        Assert.Equal(2433.38m, breakdown.Total);
+        Assert.Equal(2362.50m, breakdown.Total);
     }
 
     [Fact]
-    public void DeveAplicarDescontoNoPix()
+    public void TotalBaseDeveSerASomaDosComponentes()
     {
-        var breakdown = PricingService.Calculate(_basePrice, 1, BookingClass.Economy, PaymentMethod.Pix);
+        var breakdown = PricingService.CalculateBase(_basePrice, 3, BookingClass.Business);
 
-        Assert.True(breakdown.PaymentAdjustment < 0);
-    }
-
-    [Fact]
-    public void DeveAplicarAcrescimoNoBoleto()
-    {
-        var breakdown = PricingService.Calculate(_basePrice, 1, BookingClass.Economy, PaymentMethod.Boleto);
-
-        Assert.True(breakdown.PaymentAdjustment > 0);
+        Assert.Equal(breakdown.Total, breakdown.Subtotal + breakdown.Taxes + breakdown.ServiceFee);
     }
 
     [Fact]
     public void DeveAplicarMultiplicadorBusiness()
     {
-        var economy = PricingService.Calculate(_basePrice, 1, BookingClass.Economy, PaymentMethod.Pix);
-        var business = PricingService.Calculate(_basePrice, 1, BookingClass.Business, PaymentMethod.Pix);
+        var economy = PricingService.CalculateBase(_basePrice, 1, BookingClass.Economy);
+        var business = PricingService.CalculateBase(_basePrice, 1, BookingClass.Business);
 
-        Assert.True(business.Subtotal > economy.Subtotal);
-    }
-
-    [Fact]
-    public void TotalDeveSerASomaDosComponentes()
-    {
-        var breakdown = PricingService.Calculate(_basePrice, 3, BookingClass.Business, PaymentMethod.Boleto);
-
-        var soma = breakdown.Subtotal + breakdown.Taxes + breakdown.ServiceFee + breakdown.PaymentAdjustment;
-        Assert.Equal(breakdown.Total, soma);
+        Assert.Equal(business.Subtotal, economy.Subtotal * 2.5m);
     }
 
     [Fact]
     public void DeveFalharComQuantidadeDePassageirosInvalida()
     {
-        Assert.Throws<ArgumentException>(() => PricingService.Calculate(_basePrice, 0, BookingClass.Economy, PaymentMethod.Pix));
+        Assert.Throws<ArgumentException>(() => PricingService.CalculateBase(_basePrice, 0, BookingClass.Economy));
     }
 
     [Fact]
     public void DeveFalharComPrecoBaseInvalido()
     {
-        Assert.Throws<ArgumentException>(() => PricingService.Calculate(0m, 1, BookingClass.Economy, PaymentMethod.Pix));
+        Assert.Throws<ArgumentException>(() => PricingService.CalculateBase(0m, 1, BookingClass.Economy));
+    }
+
+    [Fact]
+    public void DeveAplicarAcrescimoNoCartaoDeCredito()
+    {
+        var payment = PricingService.CalculatePayment(2362.50m, PaymentMethod.CreditCard);
+
+        Assert.Equal(70.88m, payment.PaymentAdjustment);
+        Assert.Equal(2433.38m, payment.Total);
+    }
+
+    [Fact]
+    public void DeveAplicarDescontoNoPix()
+    {
+        var payment = PricingService.CalculatePayment(1000m, PaymentMethod.Pix);
+
+        Assert.Equal(-50m, payment.PaymentAdjustment);
+        Assert.Equal(950m, payment.Total);
+    }
+
+    [Fact]
+    public void DeveAplicarAcrescimoNoBoleto()
+    {
+        var payment = PricingService.CalculatePayment(1000m, PaymentMethod.Boleto);
+
+        Assert.Equal(10m, payment.PaymentAdjustment);
+        Assert.Equal(1010m, payment.Total);
+    }
+
+    [Fact]
+    public void DeveFalharComTotalBaseInvalido()
+    {
+        Assert.Throws<ArgumentException>(() => PricingService.CalculatePayment(0m, PaymentMethod.Pix));
     }
 }

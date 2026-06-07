@@ -25,18 +25,24 @@ public class CreateBookingHandler
         if (request.Passengers is null || request.Passengers.Count == 0)
             throw new ArgumentException("A reserva deve conter ao menos um passageiro", nameof(request.Passengers));
 
-        if (!await _customerRepository.ExistsAsync(request.CustomerId, cancellationToken))
-            throw new NotFoundException($"Cliente {request.CustomerId} não encontrado");
+        var customer = await _customerRepository.GetByIdAsync(request.CustomerId, cancellationToken)
+            ?? throw new NotFoundException($"Cliente {request.CustomerId} não encontrado");
+
+        if (!customer.IsActive)
+            throw new ConflictException("Cliente inativo não pode realizar reservas");
 
         var flight = await _flightRepository.GetByIdAsync(request.FlightId, cancellationToken)
             ?? throw new NotFoundException($"Voo {request.FlightId} não encontrado");
+
+        if (!flight.IsActive)
+            throw new ConflictException("Voo indisponível para reserva");
 
         var passengerCount = request.Passengers.Count;
         var availableSeats = request.BookingClass == BookingClass.Business ? flight.BusinessSeats : flight.EconomySeats;
         if (passengerCount > availableSeats)
             throw new ConflictException("Não há assentos suficientes disponíveis para a classe selecionada");
 
-        var breakdown = PricingService.Calculate(flight.BasePrice, passengerCount, request.BookingClass, request.PaymentMethod);
+        var breakdown = PricingService.CalculateBase(flight.BasePrice, passengerCount, request.BookingClass);
 
         var passengers = request.Passengers
             .Select(p => new Passenger(p.Name, p.Document))
@@ -54,6 +60,6 @@ public class CreateBookingHandler
             booking.Status,
             booking.TotalAmount,
             booking.Passengers.Select(p => new PassengerResponse(p.Name, p.Document)).ToList(),
-            new PriceBreakdownResponse(breakdown.Subtotal, breakdown.Taxes, breakdown.ServiceFee, breakdown.PaymentAdjustment, breakdown.Total));
+            new PriceBreakdownResponse(breakdown.Subtotal, breakdown.Taxes, breakdown.ServiceFee, breakdown.Total));
     }
 }

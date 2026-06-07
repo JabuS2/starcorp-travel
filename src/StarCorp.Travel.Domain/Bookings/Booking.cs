@@ -38,6 +38,14 @@ public class Booking : Entity
         Status = BookingStatus.Confirmed;
     }
 
+    public void Settle(decimal finalTotal)
+    {
+        Guard.ValidatePositiveDecimal(finalTotal, nameof(finalTotal));
+
+        Confirm();
+        TotalAmount = finalTotal;
+    }
+
     public void Cancel()
     {
         if (Status == BookingStatus.Cancelled)

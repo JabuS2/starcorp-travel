@@ -7,7 +7,6 @@ public record PriceBreakdownResponse(
     decimal Subtotal,
     decimal Taxes,
     decimal ServiceFee,
-    decimal PaymentAdjustment,
     decimal Total);
 
 public record BookingResponse(

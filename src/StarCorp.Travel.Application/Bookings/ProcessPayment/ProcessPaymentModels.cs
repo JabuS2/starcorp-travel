@@ -6,6 +6,8 @@ public record ProcessPaymentRequest(PaymentMethod PaymentMethod);
 public record ProcessPaymentResponse(
     Guid PaymentId,
     Guid BookingId,
+    decimal BaseAmount,
+    decimal PaymentAdjustment,
     decimal Amount,
     PaymentMethod PaymentMethod,
     PaymentStatus PaymentStatus,

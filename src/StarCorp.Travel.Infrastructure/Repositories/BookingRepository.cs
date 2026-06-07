@@ -1,6 +1,7 @@
 namespace StarCorp.Travel.Infrastructure.Repositories;
 using Dapper;
 using StarCorp.Travel.Application.Abstractions;
+using StarCorp.Travel.Application.Common.Exceptions;
 using StarCorp.Travel.Domain.Bookings;
 using StarCorp.Travel.Domain.Shared;
 using StarCorp.Travel.Infrastructure.Persistence;
@@ -22,9 +23,27 @@ VALUES (@Id, @CustomerId, @FlightId, @BookingClass, @Status, @TotalAmount, @Crea
         const string insertPassenger = @"INSERT INTO Passengers (Id, BookingId, Name, Document, CreatedAt, UpdatedAt)
 VALUES (@Id, @BookingId, @Name, @Document, @CreatedAt, @UpdatedAt);";
 
+        var seatColumn = booking.BookingClass == BookingClass.Business ? "BusinessSeats" : "EconomySeats";
+        var reserveSeats = $@"UPDATE Flights
+SET {seatColumn} = {seatColumn} - @Quantity, UpdatedAt = @Now
+WHERE Id = @FlightId AND IsActive = 1 AND {seatColumn} >= @Quantity;";
+
         await using var connection = _connectionFactory.Create();
         await connection.OpenAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+
+        var seatsReserved = await connection.ExecuteAsync(new CommandDefinition(reserveSeats, new
+        {
+            Quantity = booking.Passengers.Count,
+            Now = DateTime.UtcNow,
+            booking.FlightId
+        }, transaction, cancellationToken: cancellationToken));
+
+        if (seatsReserved == 0)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw new ConflictException("Não há assentos suficientes disponíveis para a classe selecionada");
+        }
 
         await connection.ExecuteAsync(new CommandDefinition(insertBooking, new
         {

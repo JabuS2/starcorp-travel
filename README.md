@@ -68,9 +68,9 @@ Atualmente **109 testes** (89 de domínio + 20 de aplicação), todos verdes.
 | Método | Rota | Descrição |
 |--------|------|-----------|
 | GET  | `/api/flights` | Busca de voos com filtros (`origin`, `destination`, `date`, `minPrice`, `maxPrice`, `bookingClass`) e paginação (`page`, `pageSize`) |
-| POST | `/api/bookings` | Cria reserva; retorna o *breakdown* do cálculo de preço |
+| POST | `/api/bookings` | Cria reserva (cliente, voo, classe, passageiros); retorna o *breakdown* base do cálculo de preço |
 | GET  | `/api/bookings/{id}` | Consulta reserva |
-| POST | `/api/bookings/{id}/payment` | Processa pagamento e confirma a reserva |
+| POST | `/api/bookings/{id}/payment` | Aplica o ajuste do método (CreditCard/Pix/Boleto), processa o pagamento e confirma a reserva |
 | POST | `/api/bookings/{id}/cancel` | Cancela a reserva e calcula o reembolso |
 
 Códigos HTTP: `400` (entrada inválida), `404` (não encontrado), `409` (conflito de estado, ex.: sem assentos / já paga / já cancelada), `422` (violação de regra de negócio).
@@ -78,12 +78,20 @@ Códigos HTTP: `400` (entrada inválida), `404` (não encontrado), `409` (confli
 ## Regras de negócio
 
 ### Cálculo de preço (`PricingService`)
-1. **Subtotal** = preço base × nº de passageiros × multiplicador da classe (Economy = `1.0`, Business = `2.5`)
+
+**Na criação da reserva** (`POST /api/bookings`) — `PricingService.CalculateBase`:
+1. **Subtotal** = preço base × nº de passageiros × multiplicador da classe (Econômica = `1.0`, Executiva = `2.5`)
 2. **Impostos** = 8% do subtotal + R$ 45,00 por passageiro
 3. **Taxa de serviço** = 5% sobre (subtotal + impostos)
-4. **Ajuste por método de pagamento** sobre o total: Cartão de Crédito `+3%`, Pix `-5%`, Boleto `+1%`
+4. **Total base** = subtotal + impostos + taxa de serviço
 
-O *breakdown* completo (subtotal, impostos, taxa, ajuste e total) é retornado na criação da reserva.
+Esse *breakdown* (subtotal, impostos, taxa e total base) é retornado na criação da reserva.
+
+**No pagamento** (`POST /api/bookings/{id}/payment`) — `PricingService.CalculatePayment`:
+- **Ajuste por método** sobre o total base: Cartão de Crédito `+3%`, Pix `-5%`, Boleto `+1%`
+- O valor final cobrado (`Amount`), com o ajuste, e o `PaymentAdjustment` são retornados na resposta do pagamento, e o `TotalAmount` da reserva é atualizado para o valor efetivamente cobrado.
+
+> O método de pagamento só é conhecido no endpoint de pagamento (seção 4.4 do enunciado), portanto o ajuste ±% é aplicado nessa etapa — não na criação da reserva.
 
 ### Reembolso (`CancellationService`)
 | Antecedência | Economy | Business |
@@ -99,6 +107,8 @@ O *breakdown* completo (subtotal, impostos, taxa, ajuste e total) é retornado n
 - **Sem ORM (Dapper):** SQL explícito e parametrizado, com mapeamento manual via fábricas de reconstituição (`Entity.Restore(...)`). Isso mantém o domínio rico (propriedades imutáveis, invariantes no construtor) e ao mesmo tempo permite reidratar entidades do banco preservando `Id`, *timestamps* e estado — sem refletir sobre membros privados nem expor *setters* públicos.
 - **Enums como multiplicadores/contadores:** assentos são contadores por classe (`EconomySeats`/`BusinessSeats`), não assentos individuais; `AirlineId` é um `Guid` no `Flight` (não o objeto completo).
 - **Serviços de domínio puros e estáticos:** `PricingService` e `CancellationService` não têm efeitos colaterais e recebem o "agora" como parâmetro, o que os torna trivialmente testáveis e determinísticos.
+- **Baixa de assentos transacional:** a criação da reserva decrementa o contador de assentos da classe no mesmo `BEGIN TRANSACTION` da inserção da reserva, via `UPDATE ... WHERE {classe} >= @qtd` (concorrência otimista). Se o `UPDATE` não afeta linhas, a transação é revertida e a API responde `409`, evitando *overbooking* sob concorrência.
+- **Cliente/voo inativos → `409`:** distinguimos "não existe" (`404`) de "existe mas está inativo" (`409`), em vez de mascarar o estado.
 - **`IDateTimeProvider`:** o tempo é injetado, permitindo testar pagamento/cancelamento de forma determinística.
 - **Tratamento de erros centralizado:** um único middleware traduz exceções para `ProblemDetails` com o status correto, mantendo os *handlers* livres de preocupações de HTTP.
 - **Handlers por caso de uso:** sem mediador externo, mantendo o fluxo explícito e de fácil leitura. As dependências entram por construtor (SOLID).
@@ -107,8 +117,8 @@ O *breakdown* completo (subtotal, impostos, taxa, ajuste e total) é retornado n
 
 ## O que eu faria diferente com mais tempo
 
-- **Baixa de assentos transacional:** hoje a criação de reserva valida a disponibilidade, mas não decrementa o contador de assentos do voo. Com mais tempo eu faria a reserva + baixa de assentos numa única transação com **concorrência otimista** (coluna `RowVersion`) para evitar *overbooking* sob concorrência.
-- **Testes de integração de repositório:** com Testcontainers (SQL Server) para exercitar o SQL real, hoje coberto apenas indiretamente.
+- **Concorrência otimista por versão de linha:** a baixa de assentos hoje usa um `UPDATE` guardado (`WHERE assentos >= qtd`); com mais tempo eu adicionaria uma coluna `RowVersion`/`rowversion` para detecção de conflito também em atualizações de reserva/pagamento.
+- **Testes de integração de repositório:** com Testcontainers (SQL Server) para exercitar o SQL real (inclusive a baixa transacional de assentos), hoje coberto apenas indiretamente.
 - **Estado do pagamento no cancelamento:** registrar explicitamente o reembolso (status `Refunded` no `Payment`) e um histórico de transações, em vez de apenas calcular o valor.
 - **Idempotência e `Unit of Work`:** chave de idempotência no pagamento e um *unit of work* compartilhando a conexão/transação entre repositórios em operações compostas.
 - **Validação de entrada na borda:** FluentValidation nos requests da API para respostas `400` mais ricas, complementando os *guards* de domínio.

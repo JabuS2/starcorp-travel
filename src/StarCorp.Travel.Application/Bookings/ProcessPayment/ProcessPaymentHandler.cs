@@ -27,10 +27,12 @@ public class ProcessPaymentHandler
         if (existingPayment is not null && existingPayment.Status == PaymentStatus.Confirmed)
             throw new ConflictException("A reserva já foi paga");
 
-        var payment = new Payment(booking.Id, booking.CustomerId, booking.TotalAmount, request.PaymentMethod);
+        var calculation = PricingService.CalculatePayment(booking.TotalAmount, request.PaymentMethod);
+
+        var payment = new Payment(booking.Id, booking.CustomerId, calculation.Total, request.PaymentMethod);
         payment.Confirm(_dateTimeProvider.UtcNow);
 
-        booking.Confirm();
+        booking.Settle(calculation.Total);
 
         await _bookingRepository.AddPaymentAsync(payment, cancellationToken);
         await _bookingRepository.UpdateAsync(booking, cancellationToken);
@@ -38,6 +40,8 @@ public class ProcessPaymentHandler
         return new ProcessPaymentResponse(
             payment.Id,
             payment.BookingId,
+            calculation.BaseTotal,
+            calculation.PaymentAdjustment,
             payment.Amount,
             payment.PaymentMethod,
             payment.Status,

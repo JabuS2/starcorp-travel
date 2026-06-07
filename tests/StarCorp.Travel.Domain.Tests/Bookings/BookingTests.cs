@@ -119,6 +119,26 @@ public class BookingTests
     }
 
     [Fact]
+    public void DeveLiquidarReservaAtualizandoTotalEStatus()
+    {
+        var booking = new Booking(_customerId, _flightId, _bookingClass, _totalAmount, ValidPassengers());
+
+        booking.Settle(1800m);
+
+        Assert.Equal(BookingStatus.Confirmed, booking.Status);
+        Assert.Equal(1800m, booking.TotalAmount);
+    }
+
+    [Fact]
+    public void DeveFalharAoLiquidarReservaCancelada()
+    {
+        var booking = new Booking(_customerId, _flightId, _bookingClass, _totalAmount, ValidPassengers());
+        booking.Cancel();
+
+        Assert.Throws<InvalidOperationException>(() => booking.Settle(1800m));
+    }
+
+    [Fact]
     public void DeveReconstruirReservaPreservandoIdEStatus()
     {
         var id = Guid.NewGuid();

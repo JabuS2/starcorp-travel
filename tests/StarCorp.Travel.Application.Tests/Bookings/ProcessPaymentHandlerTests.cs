@@ -26,7 +26,7 @@ public class ProcessPaymentHandlerTests
     }
 
     [Fact]
-    public async Task DeveProcessarPagamentoEConfirmarReserva()
+    public async Task DeveProcessarPagamentoComAjusteDoCartaoEConfirmarReserva()
     {
         var booking = NovaReserva();
 
@@ -34,8 +34,21 @@ public class ProcessPaymentHandlerTests
 
         Assert.Equal(PaymentStatus.Confirmed, response.PaymentStatus);
         Assert.Equal(BookingStatus.Confirmed, response.BookingStatus);
-        Assert.Equal(1000m, response.Amount);
+        Assert.Equal(1000m, response.BaseAmount);
+        Assert.Equal(30m, response.PaymentAdjustment);
+        Assert.Equal(1030m, response.Amount);
         Assert.Equal(_clock.UtcNow, response.PaidAt);
+    }
+
+    [Fact]
+    public async Task DeveAplicarDescontoDoPixEAtualizarTotalDaReserva()
+    {
+        var booking = NovaReserva();
+
+        var response = await _handler.HandleAsync(booking.Id, new ProcessPaymentRequest(PaymentMethod.Pix));
+
+        Assert.Equal(950m, response.Amount);
+        Assert.Equal(950m, _bookings.Bookings[booking.Id].TotalAmount);
     }
 
     [Fact]

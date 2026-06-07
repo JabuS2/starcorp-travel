@@ -7,7 +7,6 @@ public record CreateBookingRequest(
     Guid CustomerId,
     Guid FlightId,
     BookingClass BookingClass,
-    PaymentMethod PaymentMethod,
     IReadOnlyList<PassengerRequest> Passengers);
 
 public record CreateBookingResponse(

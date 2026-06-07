@@ -1,7 +1,9 @@
 namespace StarCorp.Travel.Domain.Bookings;
 using StarCorp.Travel.Domain.Shared;
 
-public record PriceBreakdown(decimal Subtotal, decimal Taxes, decimal ServiceFee, decimal PaymentAdjustment, decimal Total);
+public record PriceBreakdown(decimal Subtotal, decimal Taxes, decimal ServiceFee, decimal Total);
+
+public record PaymentCalculation(decimal BaseTotal, decimal PaymentAdjustment, decimal Total);
 
 public static class PricingService
 {
@@ -14,7 +16,7 @@ public static class PricingService
     private const decimal PixAdjustmentRate = -0.05m;
     private const decimal BoletoAdjustmentRate = 0.01m;
 
-    public static PriceBreakdown Calculate(decimal basePrice, int passengerCount, BookingClass bookingClass, PaymentMethod paymentMethod)
+    public static PriceBreakdown CalculateBase(decimal basePrice, int passengerCount, BookingClass bookingClass)
     {
         Guard.ValidatePositiveDecimal(basePrice, nameof(basePrice));
 
@@ -26,7 +28,14 @@ public static class PricingService
         var taxes = subtotal * TaxRate + TaxPerPassenger * passengerCount;
         var subtotalWithTaxes = subtotal + taxes;
         var serviceFee = subtotalWithTaxes * ServiceFeeRate;
-        var totalBeforeAdjustment = subtotalWithTaxes + serviceFee;
+        var total = subtotalWithTaxes + serviceFee;
+
+        return new PriceBreakdown(Round(subtotal), Round(taxes), Round(serviceFee), Round(total));
+    }
+
+    public static PaymentCalculation CalculatePayment(decimal baseTotal, PaymentMethod paymentMethod)
+    {
+        Guard.ValidatePositiveDecimal(baseTotal, nameof(baseTotal));
 
         var adjustmentRate = paymentMethod switch
         {
@@ -36,15 +45,10 @@ public static class PricingService
             _ => 0m
         };
 
-        var paymentAdjustment = totalBeforeAdjustment * adjustmentRate;
-        var total = totalBeforeAdjustment + paymentAdjustment;
+        var adjustment = Round(baseTotal * adjustmentRate);
+        var total = baseTotal + adjustment;
 
-        return new PriceBreakdown(
-            Round(subtotal),
-            Round(taxes),
-            Round(serviceFee),
-            Round(paymentAdjustment),
-            Round(total));
+        return new PaymentCalculation(baseTotal, adjustment, total);
     }
 
     private static decimal Round(decimal value) => Math.Round(value, 2, MidpointRounding.AwayFromZero);
