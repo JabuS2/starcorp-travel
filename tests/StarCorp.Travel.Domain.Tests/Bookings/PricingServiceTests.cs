@@ -79,4 +79,19 @@ public class PricingServiceTests
     {
         Assert.Throws<ArgumentException>(() => PricingService.CalculatePayment(0m, PaymentMethod.Pix));
     }
+
+    [Theory]
+    [InlineData(BookingClass.Economy, PaymentMethod.CreditCard, 1216.69)]
+    [InlineData(BookingClass.Economy, PaymentMethod.Pix, 1122.19)]
+    [InlineData(BookingClass.Economy, PaymentMethod.Boleto, 1193.06)]
+    [InlineData(BookingClass.Business, PaymentMethod.CreditCard, 2968.72)]
+    [InlineData(BookingClass.Business, PaymentMethod.Pix, 2738.14)]
+    [InlineData(BookingClass.Business, PaymentMethod.Boleto, 2911.07)]
+    public void DeveCalcularTotalFinalParaCadaCombinacaoDeClasseEMetodo(BookingClass bookingClass, PaymentMethod paymentMethod, decimal totalEsperado)
+    {
+        var breakdown = PricingService.CalculateBase(_basePrice, 1, bookingClass);
+        var payment = PricingService.CalculatePayment(breakdown.Total, paymentMethod);
+
+        Assert.Equal(totalEsperado, payment.Total);
+    }
 }
